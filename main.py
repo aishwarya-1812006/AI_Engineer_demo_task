@@ -1,35 +1,46 @@
+from idlelib import statusbar
+
 import requests
 import csv
+from datetime import datetime, timezone
 
-url = "https://raw.githubusercontent.com/yc-oss/api/main/companies/top.json"
+# YC Companies API - all launched companies
+url = "https://yc-oss.github.io/api/companies/all.json"
 
-response = requests.get(url)
+# Get the data
+response = requests.get(url, timeout=30)
+response.raise_for_status()
+
 data = response.json()
 
-companies = data[:5]
+# Take the first 1000 companies
+companies = data[:1000]
 
+# Create startup CSV
 with open("startup_data.csv", "w", newline="", encoding="utf-8") as file:
     writer = csv.writer(file)
 
+    # Header
     writer.writerow([
-        "Name",
-        "Website",
-        "Location",
-        "Industry",
-        "Team Size",
-        "Batch",
-        "Status"
+        "schemaVersion",
+        "recordType",
+        "source.name",
+        "source.url",
+        "content.entityName",
+        "content.data.employeeCount",
+        "collectedAt"
     ])
 
+    # Write company records
     for company in companies:
         writer.writerow([
-            company.get("name"),
-            company.get("website"),
-            company.get("all_locations"),
-            company.get("industry"),
-            company.get("team_size"),
-            company.get("batch"),
-            company.get("status")
+            "1.0",
+            "STARTUP",
+            "Y Combinator",
+            company.get("url", ""),
+            company.get("name", ""),
+            company.get("team_size", ""),
+            datetime.now(timezone.utc).isoformat()
         ])
 
-print("Successfully saved 5 startup records to startup_data.csv")
+print(f"Successfully saved {len(companies)} startup records to startup_data.csv")
